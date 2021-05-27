@@ -24,6 +24,12 @@
     <ClCompile Include="menu.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="game.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="thread.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="controller.h">
@@ -32,5 +38,17 @@
     <ClInclude Include="menu.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="game.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="thread.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="game_.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
