@@ -8,10 +8,10 @@
 
 
 #include<thread>
-#include<vector>
-#include<iostream>
-#include<map>
-#include<string>
+//#include<vector>
+//#include<iostream>
+//#include<map>
+//#include<string>
 using namespace std;
 
 void playGame() {
@@ -100,14 +100,11 @@ void sendBullet(int x,int y ) {
 }
 
 
+Bullet* head = 0;
+bool isLocked = false;
+
 void dealKeyEvent(int primaryX, int dx, int primaryY, int dy,  int width, int height) {
-	//开辟堆内存
-	Bullet * bullet =  (Bullet*)malloc(sizeof(Bullet)) ;
-	bullet->next = NULL;
-	//头指针
-	Bullet* head = bullet;
-	//指向的指针
-	Bullet* ptr = head;
+	Bullet* ptr= 0 ;
 
 	BeginBatchDraw();
 	while (true)
@@ -147,11 +144,25 @@ void dealKeyEvent(int primaryX, int dx, int primaryY, int dy,  int width, int he
 				}
 				break;
 			case ' ':
-				ptr->x = dx + primaryX + 51 - 2;
-				ptr->y = dy + primaryY - 12;
-				ptr = ptr->next = (Bullet*)malloc(sizeof(Bullet));
-				ptr->next = 0;
-				flushBullet(bullet);
+				if (!isLocked)
+				{
+					//防止下一次事件的进入
+					isLocked = true;
+					//锁住键盘冷却发射
+					thread unlock(lockTheKeyBoard);
+					unlock.detach();
+					if (head == 0)
+					{
+						//
+						head = (Bullet*)malloc(sizeof(Bullet));
+						head->next = 0;
+						ptr = head;
+					}
+					ptr->x = dx + primaryX + 51 - 2;
+					ptr->y = dy + primaryY - 12;
+					ptr = ptr->next = (Bullet*)malloc(sizeof(Bullet));
+					ptr->next = 0;
+				}
 				break;
 			default:
 				break;
@@ -170,7 +181,11 @@ void flushPlane(int primaryX, int dx, int primaryY, int dy,Bullet*head) {
 	
 	putimage(primaryX + dx, primaryY + dy, &plane2[1], SRCAND);
 	putimage(primaryX + dx, primaryY + dy, &plane2[0], SRCPAINT); 
-	flushBullet(head);
+	//判空
+	if (head!=0)
+	{
+		flushBullet(head);
+	}
 	/*putimage(dx + primaryX + 51 - 2, dy + primaryY - 12, &bullet1[1], SRCAND);
 	putimage(dx + primaryX + 51 - 2, dy + primaryY - 12, &bullet1[0], SRCPAINT);*/
 	FlushBatchDraw();
@@ -187,9 +202,21 @@ void flushBullet(Bullet * bullet) {
 	 while (x->next != 0) {
 		putimage(x->x, x->y, &bullet1[1], SRCAND);
 		putimage(x->x , x->y, &bullet1[0], SRCPAINT);
-		x->y -= 10;
-		x = x->next;
+		x->y -= 1;
+		if (x->y<=-11)
+		{
+			head = x->next;
+			Bullet* free_ptr = x; 
+			x = x->next;
+			free(free_ptr);
+		}else{
+			x = x->next;
+		}
 	}
-	 FlushBatchDraw();
-	 Sleep(1);
+	/* Sleep(1);*/
+}
+
+void lockTheKeyBoard() {
+	Sleep(250);
+	isLocked = false;
 }

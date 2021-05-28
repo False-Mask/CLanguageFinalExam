@@ -15,3 +15,4 @@ void* countTime(void* args);//
 void sendBullet(int x, int y);
 void flushPlane(int primaryX,int dx ,int primaryY,int dy,Bullet* head);
 void flushBullet(Bullet * bullet);
+void lockTheKeyBoard();
