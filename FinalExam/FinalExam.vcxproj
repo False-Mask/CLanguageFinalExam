@@ -143,14 +143,12 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="menu.cpp" />
-    <ClCompile Include="thread.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="controller.h" />
     <ClInclude Include="game_.h" />
     <ClInclude Include="menu.h" />
     <ClInclude Include="game.h" />
-    <ClInclude Include="thread.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
