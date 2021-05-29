@@ -30,6 +30,7 @@ void playGame() {
 }
 
 IMAGE background;
+IMAGE planeFly[4];
 IMAGE plane1[2];
 IMAGE plane2[2];
 IMAGE bullet1[2];
@@ -57,6 +58,9 @@ bool isPlaneAlive = true;
 
 int width;
 int height;
+
+int planeFlyFrame = 0;
+int enemy3Frame = 0;
 
 void  initView() {
 
@@ -101,13 +105,13 @@ void  initView() {
 void loadResource() {
 	//加载背景
 	loadimage(&background, "background.png");
-
+	
 	//加载飞机
-	loadimage(&plane1[0], "me1.png");
-	loadimage(&plane1[1], "me1y.png");
+	loadimage(&planeFly[0], "me1.png");
+	loadimage(&planeFly[1], "me1y.png");
 
-	loadimage(&plane2[0], "me2.png");
-	loadimage(&plane2[1], "me2y.png");
+	loadimage(&planeFly[2], "me2.png");
+	loadimage(&planeFly[3], "me2y.png");
 	//加载子弹
 	loadimage(&bullet1[0], "bullet1.png");
 	loadimage(&bullet1[1], "bullet1y.png");
@@ -253,8 +257,13 @@ void dealKeyEvent(int primaryX, int dx, int primaryY, int dy,  int width, int he
 
 void flushView() {
 	putimage(0, 0, &background);
-	putimage(plane.x, plane.y, &plane2[1], SRCAND);
-	putimage(plane.x, plane.y, &plane2[0], SRCPAINT); 
+
+	putimage(plane.x, plane.y, &planeFly[2 * planeFlyFrame + 1], SRCAND);
+	putimage(plane.x, plane.y, &planeFly[2 * planeFlyFrame], SRCPAINT);
+	if (++planeFlyFrame==2)
+	{
+		planeFlyFrame = 0;
+	}
 
 	//判空
 	if (bulletsHead != 0)
@@ -266,11 +275,8 @@ void flushView() {
 	{
 		flushEnermy(enermysHead);
 	}
-
-
 	FlushBatchDraw();
-	putimage(plane.x, plane.y, &plane1[1], SRCAND);
-	putimage(plane.x, plane.y, &plane1[0], SRCPAINT);
+
 	return;
 }
 
@@ -291,7 +297,6 @@ void flushBullet(Bullets * bullet) {
 			x = x->next;
 		}
 	}
-	/* Sleep(1);*/
 }
 
 
@@ -334,7 +339,7 @@ void manageEnemy() {
 		}
 
 		//指向最后一个节点
-		while (ptr->next!=0)
+		while (ptr->next != 0)
 		{
 			ptr = ptr->next;
 		}
@@ -350,7 +355,7 @@ void manageEnemy() {
 			ptr->next = 0;
 		}
 		//初始化enemy2
-		for (int  i = 0; i < enermy2_count; i++)
+		for (int i = 0; i < enermy2_count; i++)
 		{
 			ptr->bloodCount = 2;
 			ptr->speed = 2 + (rand() % 2);
@@ -360,6 +365,7 @@ void manageEnemy() {
 			ptr = ptr->next = (Enermys*)malloc(sizeof(Enermys));
 			ptr->next = 0;
 		}
+		//初始化enemy3
 		for (int i = 0; i < enermy3_count; i++)
 		{
 			ptr->bloodCount = 5;
@@ -370,19 +376,83 @@ void manageEnemy() {
 			ptr = ptr->next = (Enermys*)malloc(sizeof(Enermys));
 			ptr->next = 0;
 		}
-
+		//处理数据
 		while (true)
 		{
-			ptr = enermysHead;
-			while (ptr->next != 0)
+			Enermys* loaclPtr = 0;
+			Enermys* localHeadPtr = 0;
+
+			Enermys* freeHeadPtr = 0;
+			Enermys* freePtr = 0;
+
+			int aliveCount = 0;
+			int freeCount = 0;
+			//取出所有活着的敌人 并把需要free放进另外一个链表
+			if (enermysHead != 0)
 			{
-				ptr->y += ptr->speed;
-				ptr = ptr->next;
+				ptr = enermysHead;
+				while (ptr->next != 0)
+				{
+					if (ptr->y < height && ++aliveCount == 1)
+					{
+						localHeadPtr = ptr;
+						loaclPtr = localHeadPtr;
+					}
+					else if (ptr->y < height && ++aliveCount)
+					{
+						loaclPtr = loaclPtr->next = ptr;
+					}
+					else if (ptr->y >= height && ++freeCount == 1)
+					{
+						freeHeadPtr = ptr;
+						freePtr = freeHeadPtr;
+					}
+					else if (ptr->y >= height && ++freeCount)
+					{
+						freePtr = freePtr->next = ptr;
+					}
+					ptr = ptr->next;
+				}
+			}
+			//更新数据的头指针
+			enermysHead = localHeadPtr;
+			//更新数据
+			if (enermysHead != 0)
+			{
+				ptr = enermysHead;
+				while (ptr->next != 0)
+				{
+					ptr->y += ptr->speed;
+					ptr = ptr->next;
+				}
+			}
+			//把需要free掉需要free内容
+			/*if (freeHeadPtr != 0)
+			{
+				freePtr = freeHeadPtr;
+				while (freePtr->next != 0)
+				{
+					Enermys* localFreePtr = freePtr;
+					freePtr = freePtr->next;
+					free(localFreePtr);
+				}
+			}*/
+			if (enermysHead == 0)
+			{
+				if (freeHeadPtr != 0)
+				{
+					freePtr = freeHeadPtr;
+					while (freePtr->next != 0)
+					{
+						Enermys* localFreePtr = freePtr;
+						freePtr = freePtr->next;
+						free(localFreePtr);
+					}
+				}
+				break;
 			}
 			Sleep(25);
 		}
-		//////////////////////////////////////////////////////////////////////////////////////
-		Sleep(10000);
 	}
 	return;
 }
@@ -404,10 +474,12 @@ void flushEnermy(Enermys* enermyHead) {
 		}
 		else if (ptr->type == 3)
 		{
-			putimage(ptr->x, ptr->y, &enemy3[1], SRCAND);
-			putimage(ptr->x, ptr->y, &enemy2[0], SRCPAINT);
-			putimage(ptr->x, ptr->y, &enemy2[3], SRCAND);
-			putimage(ptr->x, ptr->y, &enemy2[2], SRCPAINT);
+			putimage(ptr->x, ptr->y, &enemy3[2*enemy3Frame+1], SRCAND);
+			putimage(ptr->x, ptr->y, &enemy3[2 * enemy3Frame], SRCPAINT);
+			if (++enemy3Frame == 2)
+			{
+				enemy3Frame = 0;
+			}
 		}
 		ptr = ptr->next;
 	}
