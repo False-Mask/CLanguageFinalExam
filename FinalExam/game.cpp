@@ -44,18 +44,9 @@ IMAGE enemy3_down[12];
 Bullets* bulletsHead = 0;
 //敌人的头指针
 Enermys* enermysHead = 0;
-//含有锁的get方法
-Enermys* getEnermysHeadAndLock() {
-	//加一下锁
-	enemyLock.lock();
-	return enermysHead;
-}
 
 //与计数相关的结构体
 EnemyCount enemyCount = {0,0,0,0,0,0,0,0,0,0};
-EnemyCount getEnemyCountAndLock() {
-	return enemyCount;
-}
 
 
 //飞机
@@ -176,7 +167,8 @@ void sendBullet(int x,int y ) {
 
 
 void dealKeyEvent(int primaryX, int dx, int primaryY, int dy,  int width, int height) {
-	Bullets* ptr= 0 ;
+	Bullets* ptr= NULL;
+	Bullets* lastPtr = NULL;
 	while (true)
 	{
 		if (_kbhit())
@@ -224,17 +216,30 @@ void dealKeyEvent(int primaryX, int dx, int primaryY, int dy,  int width, int he
 					//锁住键盘冷却发射
 					thread unlock(lockTheKeyBoard);
 					unlock.detach();
-					if (bulletsHead == 0)
+					enemyLock.lock();
+					ptr = bulletsHead;
+					if (bulletsHead == NULL)
 					{
 						//
 						bulletsHead = (Bullets*)malloc(sizeof(Bullets));
 						bulletsHead->next = NULL;
+ 						bulletsHead->last = NULL;
 						ptr = bulletsHead;
+					}
+					else
+					{
+						while (ptr->next!=NULL)
+						{
+							ptr = ptr->next;
+						}
 					}
 					ptr->x = dx + primaryX + 51 - 2;
 					ptr->y = dy + primaryY - 12;
+					lastPtr = ptr;
 					ptr = ptr->next = (Bullets*)malloc(sizeof(Bullets));
-					ptr->next = 0;
+					ptr->last = lastPtr;
+					ptr->next = NULL;
+					enemyLock.unlock();
 				}
 				break;
 			default:
@@ -251,24 +256,29 @@ void flushView() {
 	//判空
 	if (bulletsHead != 0)
 	{
+		enemyLock.lock();
 		flushBullet(bulletsHead);
+		enemyLock.unlock();
 	}
 
 	//刷新视图之前获取锁
-	Enermys* enemyHeadPtr = getEnermysHeadAndLock();
+	Enermys* enemyHeadPtr = enermysHead;
 	if (enemyHeadPtr != 0)
 	{
+		enemyLock.lock();
 		flushEnermy(enemyHeadPtr);
+		enemyLock.unlock();
 	}
 	//释放锁
-	enemyLock.unlock();
 
 
 	//如果图片是可以看见的
 	if (plane.y <= height)
 	{
+		enemyLock.lock();
 		putimage(plane.x, plane.y, &planeFly[2 * planeFlyFrame + 1], SRCAND);
 		putimage(plane.x, plane.y, &planeFly[2 * planeFlyFrame], SRCPAINT);
+		enemyLock.unlock();
 		if (++planeFlyFrame == 2)
 		{
 			planeFlyFrame = 0;
@@ -276,8 +286,7 @@ void flushView() {
 	}
 
 	FlushBatchDraw();
-
-
+	
 	return;
 }
 
@@ -290,17 +299,7 @@ void flushBullet(Bullets * bullet) {
 			 putimage(x->x, x->y, &bullet1[1], SRCAND);
 			 putimage(x->x, x->y, &bullet1[0], SRCPAINT);
 		 }
-		x->y -= 1;
-		if (x->y  <= -11)
-		{
-			bulletsHead = x->next;
-			Bullets* free_ptr = x; 
-			x = x->next;
-			free(free_ptr);
-		}
-		else{
-			x = x->next;
-		}
+		x = x->next;
 	}
 }
 
@@ -316,7 +315,7 @@ void manageEnemy() {
 	//引入伪随机数生成器
 	srand(time(NULL));
 	//获取锁
-	getEnermysHeadAndLock();
+	enemyLock.lock();
 	//修改enermy 初始化头指针
 	enermysHead = (Enermys*)malloc(sizeof(Enermys));
 	enermysHead->next = NULL;
@@ -326,8 +325,9 @@ void manageEnemy() {
 
 	while (isPlaneAlive)
 	{
+		enemyLock.lock();
 		//获取锁	构建 临时指针
-		Enermys* ptr = getEnermysHeadAndLock();
+		Enermys* ptr = enermysHead;
 		//初始化enemry的数量
 		initEnermyCount(&enemyCount);
 		//指向最后一个节点
@@ -342,104 +342,20 @@ void manageEnemy() {
 
 		while (true)
 		{
-	//		//这两个涉及到结构体指针的初始化‘切忌’扩大作用域
-	//		/*int aliveCount = 0;
-	//		int freeCount = 0;*/
+			enemyLock.lock();
 
-	//		//处理数据
-	//		/*Enermys* loaclPtr = 0;
-	//		Enermys* localHeadPtr = 0;
-
-	//		Enermys* freeHeadPtr = 0;
-	//		Enermys* freePtr = 0;*/
-			Enermys* localPtr = getEnermysHeadAndLock();
-	//		//取出所有活着的敌人 并把需要free放进另外一个链表
-	//		//if (enermysHead != 0)
-	//		//{
-	//		//	ptr = enermysHead;
-	//		//	//遍历所有
-	//		//	while (ptr->next != 0)
-	//		//	{
-	//		//		//如果是第一个检索到的存活的战机 设置为局部的头指针
-	//		//		if (ptr->y < height && aliveCount == 0)
-	//		//		{
-	//		//			localHeadPtr = (Enermys*)malloc(sizeof(Enermys));
-	//		//			copyEnemy(ptr,localHeadPtr);
-	//		//			loaclPtr = localHeadPtr;
-	//		//			++aliveCount;
-	//		//		}
-	//		//		//如果是存活而且不是第一个，充当节点
-	//		//		else if  (ptr->y < height)
-	//		//		{
-	//		//			loaclPtr = loaclPtr->next = (Enermys*)malloc(sizeof(Enermys));
-	//		//			copyEnemy(ptr, loaclPtr);
-	//		//			++aliveCount;
-	//		//		}
-	//		//		//如果死亡了，并且是死亡战机的第一个 ->充当头指针
-	//		//		else if (ptr->bloodCount == 0 || (ptr->y >= height && freeCount == 0))
-	//		//		{
-	//		//			//记录击杀量和逃脱量
-	//		//			if (ptr->bloodCount== 0)
-	//		//			{
-	//		//				killCount++;
-	//		//			}
-	//		//			else
-	//		//			{
-	//		//				passCount++;
-	//		//			}
+			Enermys* localPtr = enermysHead;
 			spyEnemyData(localPtr);
-	//		//			++freeCount;
-	//		//		}
-	//		//		//如果死亡
-	//		//		else if (ptr->y >= height )
-	//		//		{
-	//		//			//记录击杀量和逃脱量
-	//		//			if (ptr->bloodCount == 0)
-	//		//			{
-	//		//				killCount++;
-	//		//			}
-	//		//			else
-	//		//			{
-	//		//				passCount++;
-	//		//			}
-	//		//			//freePtr = freePtr->next = ptr;
-	//		//			++freeCount;
-	//		//		}
-	//		//		ptr = ptr->next;
-	//		//	}
-	//		//	//最后一个节点没复制导致没执行一次少掉一个节点
-	//		//	loaclPtr = loaclPtr->next = (Enermys*)malloc(sizeof(Enermys));
-	//		//	copyEnemy(ptr, loaclPtr);
-	//		//	//刷新
-	//		//	if (freeHeadPtr != 0)
-	//		//	{
-	//		//		freePtr = freeHeadPtr;
-	//		//		while (freePtr->next != 0)
-	//		//		{
-	//		//			Enermys* localFreePtr = freePtr;
-	//		//			freePtr = freePtr->next;
-	//		//			free(localFreePtr);
-	//		//		}
-	//		//	}
-	//		//}
-	//		///////////////////////////////
-	//		/*freeHeadPtr = enermysHead;
-	//		freePtr = freeHeadPtr;*/
-	//		//更新数据的头指针
-	//		//enermysHead = localHeadPtr;
-	//		//刷新敌军的轨迹
 			updataEnermy(enermysHead);
-
-
-			//更新完成释放锁
-			enemyLock.unlock();
-
-		//	//当敌人小于总数的5分之一时候就开始发下一波
+			updataBullets(bulletsHead);
+			//当敌人小于总数的5分之一时候就开始发下一波
 			EnemyCount count = enemyCount;
 			if (count.currentAll <= count.all/40)
 			{
+				enemyLock.unlock();
 				break;
 			}
+			enemyLock.unlock();
 			Sleep(25);
 		}
 
@@ -475,32 +391,6 @@ void flushEnermy(Enermys* enermyHead) {
 				}
 			}
 		}
-
-
-		//不可见 回收
-		/*else
-		{
-			if (ptr->last == 0)
-			{
-				enermysHead = ptr->next;
-				enermysHead->last = 0;
-				countEnemyCount(ptr);
-				free(ptr);
-				ptr = enermysHead;
-			}
-			else
-			{
-				Enermys* freeData = ptr;
-				Enermys* last = ptr->last;
-				Enermys* next = ptr->next;
-				last->next = next;
-				next->last = last;
-				ptr = ptr->last;
-				countEnemyCount(ptr);
-				free(freeData);
-			}
-		}*/
-
 
 		if (ptr->next ==0 && ptr->last ==0)
 		{
@@ -630,7 +520,6 @@ void countEnemyCount(Enermys* ptr) {
 	default:
 		break;
 	}
-	/*enemyLock.unlock();*/
 	enemyCount.currentAll--;
 	return;
 }
@@ -639,6 +528,7 @@ void countEnemyCount(Enermys* ptr) {
 void spyEnemyData(Enermys * ptr) {
 	Enermys* localPtr = ptr;
 	//安全措施
+	//观察处理enemys
 	if (localPtr==NULL ||(localPtr->last ==NULL&& localPtr->next==NULL))
 	{
 		return;
@@ -649,11 +539,10 @@ void spyEnemyData(Enermys * ptr) {
 		if (localPtr-> y >= height)
 		{
 			//Free的策略
-			if (localPtr->last == 0)
+			if (localPtr->last == NULL)
 			{
 				enermysHead = localPtr->next;
 				enermysHead->last = NULL;
-				countEnemyCount(localPtr);
 				free(localPtr);
 				localPtr = enermysHead;
 			}
@@ -665,9 +554,10 @@ void spyEnemyData(Enermys * ptr) {
 				last->next = next;
 				next->last = last;
 				localPtr = localPtr->last;
-				countEnemyCount(localPtr);
 				free(freeData);
 			}
+			//计量敌军数量
+			countEnemyCount(localPtr);
 		}
 		if (localPtr->last ==NULL && localPtr->next == NULL)
 		{
@@ -675,4 +565,154 @@ void spyEnemyData(Enermys * ptr) {
 		}
 		localPtr = localPtr->next;
 	}
+	
+	//观察并处理bullet
+	if (bulletsHead != NULL)
+	{
+		Bullets* localBullets = bulletsHead;
+		while (localBullets->next != NULL) {
+			if (localBullets->y <= -11)
+			{
+				//头
+				if (localBullets->last == NULL)
+				{
+					Bullets* freePtr = localBullets;
+					localBullets = localBullets->next;
+					free(freePtr);
+					localBullets->last = NULL;
+					bulletsHead = localBullets;
+					break;
+				}
+				else
+				{
+					Bullets* free_ptr = localBullets;
+					Bullets* next = localBullets->next;
+					Bullets* last = localBullets->last;
+					last->next = next;
+					next->last = last;
+					free(free_ptr);
+				}
+				localBullets = localBullets->next;
+			}
+
+			//保证安全
+			if (localBullets->next == NULL && localBullets->last == NULL)
+			{
+				free(localBullets);
+				bulletsHead = NULL;
+				break;
+			}
+
+			//检查子弹是否击中敌人
+			Enermys* localPtr = enermysHead;
+			if (localPtr != NULL)
+			{
+				while (localPtr->next != NULL) {
+					//打中了
+					if (judgeBulletsHitEnemy(localBullets, localPtr)) {
+   						Bullets* freePtr = localBullets;
+						Bullets* last = localBullets->last;
+						Bullets* next = localBullets->next;
+   						if (last==NULL)
+						{
+							free(freePtr);
+							localBullets = next;
+							localBullets->last = NULL;
+							bulletsHead = localBullets;
+							break;
+						}
+						else
+						{
+							last->next = next;
+							next->last = last;
+							free(freePtr);
+							localBullets = last;
+						}
+					}
+					localPtr = localPtr->next;
+				}
+			}
+			if (localBullets->next==NULL)
+			{
+				bulletsHead = localBullets;
+				return;
+			}
+			//指向下一个节点
+			localBullets = localBullets->next;
+		}
+	}
+
+	return;
+	
+}
+
+bool judgeBulletsHitEnemy(Bullets * localBullets, Enermys * localPtr) {
+		if (localPtr != NULL)
+		{
+			Enermys* ptr = localPtr;
+			while (ptr->next != NULL)
+			{
+				switch (ptr->type)
+				{
+					//57*43
+				case 1:
+					if (localBullets->x >= localPtr->x
+						&& localBullets->x <= localPtr->x + 55
+						&& localBullets->y >= localPtr->y
+						&& localBullets->y <= localPtr->y + 40)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+					break;
+					//69 * 99
+				case 2:
+					if (localBullets->x >= localPtr->x
+						&& localBullets->x <= localPtr->x + 67
+						&& localBullets->y >= localPtr->y
+						&& localBullets->y <= localPtr->y + 97)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+					break;
+					//169 * 258
+				case 3:
+					if (localBullets->x >= localPtr->x
+						&& localBullets->x <= localPtr->x + 167
+						&& localBullets->y >= localPtr->y
+						&& localBullets->y <= localPtr->y + 256)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+					break;
+				default:
+					break;
+				}
+				ptr = ptr->next;
+			}
+		}
+}
+
+void updataBullets(Bullets* bulletsPtr) {
+	if (bulletsPtr!=NULL)
+	{
+		Bullets* localPtr = bulletsPtr;
+		while (localPtr->next!=NULL)
+		{
+			localPtr->y -= 10;
+			localPtr = localPtr->next;
+		}
+	}
+	return;
 }
