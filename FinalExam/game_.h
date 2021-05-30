@@ -18,8 +18,24 @@ typedef struct ENEMYS {
 	int y;//y轴坐标
 	int speed;//敌军的运动速度
 	int type;//敌军的类型
+	bool isVisuable;
+	ENEMYS* last;
 	ENEMYS* next;
 }Enermys;
+typedef struct ENEMYCOUNT {
+	unsigned long long all;
+	unsigned long long enemy1;
+	unsigned long long enemy2;
+	unsigned long long enemy3;
+	int currentEnemy1;
+	int currentEnemy2;
+	int currentEnemy3;
+	int currentAll;
+	int killCount;
+	int passCount;
+}EnemyCount;
+
+
 void initView();//初始化视图
 void loadResource();//加载资源文件
 void openCountThread();//开启记录时间的线程
@@ -31,3 +47,10 @@ void flushBullet(Bullets * bullet);
 void lockTheKeyBoard();//冷却空格键（分支线程）
 void manageEnemy();//分发敌兵（分支线程）
 void flushEnermy(Enermys* enermyHead);//刷新enermy显示
+void initEnermyCount(EnemyCount* enemyCount);//初始化发兵的个数
+void initEnermyData(EnemyCount count, Enermys* ptr);//初始化enermy的数据
+void updataEnermy(Enermys * ptr);//更新敌军的运动轨迹
+void copyEnemy(Enermys* src,Enermys* ptr);//复制一份新的Enemys
+void countEnemyCount(Enermys* ptr);//计算Enemy的个数
+EnemyCount getEnemyCountAndLock();
+void spyEnemyData(Enermys* ptr);
