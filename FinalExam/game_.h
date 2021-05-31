@@ -19,7 +19,10 @@ typedef struct ENEMYS {
 	int y;//y轴坐标
 	int speed;//敌军的运动速度
 	int type;//敌军的类型
-	bool isVisuable;
+	bool isAlive = true;
+	bool isHit = false;
+	int destroyFrame;
+	int hitFrame = 0;
 	ENEMYS* last;
 	ENEMYS* next;
 }Enermys;
@@ -47,13 +50,14 @@ void flushView();
 void flushBullet(Bullets * bullet);
 void lockTheKeyBoard();//冷却空格键（分支线程）
 void manageEnemy();//分发敌兵（分支线程）
-void flushEnermy(Enermys* enermyHead);//刷新enermy显示
+void flushEnermy();//刷新enermy显示
 void initEnermyCount(EnemyCount* enemyCount);//初始化发兵的个数
 void initEnermyData(EnemyCount count, Enermys* ptr);//初始化enermy的数据
 void updataEnermy(Enermys * ptr);//更新敌军的运动轨迹
 void copyEnemy(Enermys* src,Enermys* ptr);//复制一份新的Enemys
-void countEnemyCount(Enermys* ptr);//计算Enemy的个数
 EnemyCount getEnemyCountAndLock();
 void spyEnemyData(Enermys* ptr);//观察enemy的变动
 bool judgeBulletsHitEnemy(Bullets * localBullets, Enermys* localPtr);//检查是否击中
 void updataBullets(Bullets* bulletsPtr);//更新发射的子弹
+Enermys* enemyLinkedListRemove(Enermys* ptr);
+void updataFrame();//更新帧率
