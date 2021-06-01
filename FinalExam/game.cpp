@@ -606,7 +606,7 @@ void spyEnemyData(Enermys * ptr) {
 	enemyCount.currentEnemy2 = enemy_2;
 	enemyCount.currentEnemy3 = enemy_3;
 	enemyCount.currentAll = enemy_3+ enemy_2+ enemy_1;
-	//观察并处理bullet
+	//观察并处理bullet 当有子弹的时候（没子弹就直接退出了） 内部还有对enemy的攻击处理
 	if (bulletsHead != NULL)
 	{
 		Bullets* localBullets = bulletsHead;
@@ -710,6 +710,24 @@ void spyEnemyData(Enermys * ptr) {
 		}
 	}
 
+	//处理当子弹为空时候的情况
+	if (bulletsHead != NULL && bulletsHead->next == NULL && enermysHead!=NULL && enermysHead->next!=NULL)
+	{
+		//遍历每一个enemy看是否需要回收掉
+		Enermys* enemyPtr = enermysHead;
+		while (enemyPtr->next!=NULL)
+		{
+			if (enemyPtr->bloodCount == 0 && enemyPtr->destroyFrame == 0) {
+				//清理节点
+				enemyPtr = enemyLinkedListRemove(enemyPtr);
+				if (enemyPtr->next == NULL && enemyPtr->last == NULL)
+				{
+					break;
+				}
+			}
+			enemyPtr = enemyPtr->next;
+		}
+	}
 	return;
 	
 }
