@@ -7,7 +7,7 @@ int main() {
 	int resultCode = initMenu(200,200,400,250,20,LIGHTBLUE,WHITE);	//初始化一个选择菜单
 	handleUserOption(resultCode);
 
-	char x = getchar();	 //测试阶段阻塞线程
+	//char x = getchar();	 //测试阶段阻塞线程
 	closegraph(); //关闭
 	return 0;
 }

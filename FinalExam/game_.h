@@ -4,6 +4,7 @@ typedef struct PLANE {
 	bool isAlive = true;
 	int x = 0;
 	int y = 0;
+	int destroyFrame=4;
 }Plane;
 typedef struct BULLETS
 {
@@ -61,3 +62,4 @@ bool judgeBulletsHitEnemy(Bullets * localBullets, Enermys* localPtr);//¼ì²éÊÇ·ñ»
 void updataBullets(Bullets* bulletsPtr);//¸üÐÂ·¢ÉäµÄ×Óµ¯
 Enermys* enemyLinkedListRemove(Enermys* ptr);
 void updataFrame();//¸üÐÂÖ¡ÂÊ
+bool judgeIsAlive();

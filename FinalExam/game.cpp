@@ -18,7 +18,7 @@ void playGame() {
 	initView();
 
 	//阻塞
-	int x = getchar();
+	//int x = getchar();
 	return;
 }
 
@@ -28,6 +28,7 @@ IMAGE plane1[2];
 IMAGE plane2[2];
 IMAGE bullet1[2];
 IMAGE bullet2[2];
+IMAGE me_destroy[8];
 //敌人1
 IMAGE enemy1[2];
 IMAGE enemy1_down[8];
@@ -62,7 +63,7 @@ int enemy3Frame = 0;
 
 void  initView() {
 
-	loadResource();
+	A:loadResource();
 
 	width = background.getwidth();
 	height = background.getheight();
@@ -92,11 +93,49 @@ void  initView() {
 
 	//dealKeyEvent(primaryX,dx,primaryY,dy,width,height);
 	BeginBatchDraw();
-	while (true)
+	while (true && isPlaneAlive)
 	{
 		flushView();
 	}
 	EndBatchDraw();
+	//死球了
+	putimage(0, 0, &background);
+
+	settextstyle(30, 0, "Arial", 0, 0, 400, false, false, false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY, DEFAULT_PITCH);
+	setbkmode(TRANSPARENT);
+	settextcolor(BLACK);
+	setlinecolor(BLACK);
+
+	int left1 = 480 / 2 - 60;
+	int top1 = 700 / 2 - 110;
+	int right1 = 480 / 2 + 60;
+	int bottom1 = 700 / 2 - 60;
+	outtextxy(480/2 - 50, 700/2 - 100, "重新开始");
+	roundrect(480 / 2 - 60, 700 / 2 - 110, 480 / 2 +60, 700 / 2 - 60,10,10);
+
+	int left2 = 480 / 2 - 60;
+	int top2 = 700 / 2 - 10;
+	int right2 = 480 / 2 + 60;
+	int bottom2 = 700 / 2 + 40;
+	outtextxy(480 / 2 - 50, 700 / 2 , "退出游戏");
+	roundrect(480 / 2 - 60, 700 / 2 - 10, 480 / 2 + 60, 700 / 2 + 40, 10, 10);
+	MOUSEMSG m;
+	while (true) {
+		m = GetMouseMsg();
+		if (m.uMsg == WM_LBUTTONUP)
+		{
+			if (m.x >= left1 && m.x<= right1 && m.y>=top1 && m.y<= bottom1)
+			{
+				isPlaneAlive = true;
+				plane.isAlive = true;
+				plane.destroyFrame = 4;
+				goto A;
+			}
+			if (m.x >= left2 && m.x<= right2 && m.y >= top2 && m.y <= bottom2) {
+				break;
+			}
+		}
+	}
 	return;
 }
 
@@ -108,6 +147,14 @@ void loadResource() {
 	//加载飞机
 	loadimage(&planeFly[0], "me1.png");
 	loadimage(&planeFly[1], "me1y.png");
+	for (int i = 0; i < 4; i++)
+	{
+		char name[20];
+		sprintf(name, "me_destroy_%d.png", i + 1);
+		loadimage(&me_destroy[2 * i], name);
+		sprintf(name, "me_destroy_%dy.png", i + 1);
+		loadimage(&me_destroy[2 * i+1], name);
+	}
 
 	loadimage(&planeFly[2], "me2.png");
 	loadimage(&planeFly[3], "me2y.png");
@@ -247,7 +294,10 @@ void dealKeyEvent(int primaryX, int dx, int primaryY, int dy,  int width, int he
 			default:
 				break;
 			}
-
+		}
+		if (!isPlaneAlive)
+		{
+			break;
 		}
 	}
 }
@@ -275,7 +325,7 @@ void flushView() {
 
 
 	//如果图片是可以看见的
-	if (plane.y <= height)
+	if (plane.isAlive)
 	{
 		enemyLock.lock();
 		putimage(plane.x, plane.y, &planeFly[2 * planeFlyFrame + 1], SRCAND);
@@ -285,6 +335,15 @@ void flushView() {
 		{
 			planeFlyFrame = 0;
 		}
+	}
+	else if (!plane.isAlive && plane.destroyFrame>0)
+	{
+		int frame = 4 - plane.destroyFrame;
+		putimage(plane.x, plane.y, &planeFly[2 *frame  + 1], SRCAND);
+		putimage(plane.x, plane.y, &planeFly[2 * frame], SRCPAINT);
+	}
+	else if (plane.destroyFrame == 0) {
+		isPlaneAlive = false;
 	}
 
 	FlushBatchDraw();
@@ -343,7 +402,7 @@ void manageEnemy() {
 		//操做完成释放锁
 		enemyLock.unlock();
 
-		while (true)
+		while (isPlaneAlive)
 		{
 			enemyLock.lock();
 
@@ -355,6 +414,11 @@ void manageEnemy() {
 			updataFrame();
 			//当敌人小于总数的5分之一时候就开始发下一波
 			EnemyCount count = enemyCount;
+			//
+			if (judgeIsAlive())
+			{
+				plane.isAlive = false;
+			}
 			if (count.currentAll <= count.all/15)
 			{
 				enemyLock.unlock();
@@ -841,20 +905,20 @@ void updataFrame() {
 		enemy3Frame = 0;
 	}
 	//刷新Enemy frame
-	if (enermysHead!=NULL)
+	if (enermysHead != NULL)
 	{
 		Enermys* ptr = enermysHead;
 		while (ptr->next != NULL)
 		{
-			if (!ptr->isAlive && ptr->destroyFrame >=1)
+			if (!ptr->isAlive && ptr->destroyFrame >= 1)
 			{
 				ptr->destroyFrame--;
 			}
-			if (ptr->isHit && ptr->hitFrame >=1)
+			if (ptr->isHit && ptr->hitFrame >= 1)
 			{
 				ptr->hitFrame--;
 			}
-			else if (ptr->isHit && ptr->hitFrame ==0)
+			else if (ptr->isHit && ptr->hitFrame == 0)
 			{
 				ptr->isHit = false;
 				switch (ptr->type)
@@ -871,7 +935,7 @@ void updataFrame() {
 					break;
 				}
 			}
-			if (ptr->next ==NULL && ptr->last == NULL)
+			if (ptr->next == NULL && ptr->last == NULL)
 			{
 				break;
 			}
@@ -879,4 +943,93 @@ void updataFrame() {
 		}
 	}
 	return;
+}
+
+bool judgeIsAlive() {
+	bool flag = false;
+	if (enermysHead != NULL && plane.isAlive==true) {
+		Enermys* ptr = enermysHead;
+		while (ptr->next != NULL) {
+			int enemyCenterX = 0;
+			int enemyCenterY = 0;
+			//102 * 126
+			int planeCenterX = plane.x +102 / 2;
+			int planeCenterY = plane.y +126 / 2;
+			int r = 0;
+			//switch (ptr->type)
+			//	{
+			//		//57*43
+			//	case 1:
+			//		if (
+			//			ptr-> y + 43 >= plane.y &&
+			//			ptr-> y + 43 <= plane.y +126 &&
+			//			(abs(ptr -> x - plane.x-102) <= 102 + 57 ||abs(plane.x- ptr -> x - 57) <= 102 + 57)
+			//		){
+			//			flag = true;
+			//		}
+			//		break;
+			//		//69 * 99
+			//	case 2:
+			//		if (
+			//			ptr->y + 99 >= plane.y &&
+			//			ptr->y + 99 <= plane.y + 126 &&
+			//			(abs(ptr->x - plane.x - 102) <= 102 + 69 || abs(plane.x - ptr->x - 69) <= 102 + 69)
+			//		){
+			//			flag = true;
+			//		}
+			//		break;
+			//		//169 * 258
+			//	case 3:
+			//		if (
+			//			ptr->y + 258 >= plane.y &&
+			//			ptr->y + 258 <= plane.y + 126 &&
+			//			(abs(ptr->x - plane.x - 102) <= 102 + 169 || abs(plane.x - ptr->x - 169) <= 102 + 169)
+			//		){
+			//			flag = true;
+			//		}
+			//		break;
+			//	default:
+			//		break;
+			//	}
+			switch (ptr->type) {
+				//57*43
+			case 1:
+				enemyCenterX = ptr->x + 57 / 2;
+				enemyCenterY = ptr->y + 43 / 2;
+				r= sqrt(pow(enemyCenterX - planeCenterX, 2) + pow(enemyCenterY - planeCenterY, 2));
+				if (r <= (102+45)/2)
+				{
+					flag = true;
+				}
+				break;
+				//69 * 99
+			case 2:
+				enemyCenterX = ptr->x + 69 / 2;
+				enemyCenterY = ptr->y + 99 / 2;
+				r = sqrt(pow(enemyCenterX - planeCenterX, 2) + pow(enemyCenterY - planeCenterY, 2));
+				if (r <= (102 + 69) / 2)
+				{
+					flag = true;
+				}
+				break;
+				//169 * 258
+			case 3:
+				enemyCenterX = ptr->x + 169 / 2;
+				enemyCenterY = ptr->y + 258 / 2;
+				r = sqrt(pow(enemyCenterX - planeCenterX, 2) + pow(enemyCenterY - planeCenterY, 2));
+				if (r <= (102 + 200) / 2)
+				{
+					flag = true;
+				}
+				break;
+			default:
+				break;
+			}
+			ptr = ptr->next;
+		}
+	}
+	else if (plane.isAlive==false && plane.destroyFrame>0) {
+		plane.destroyFrame--;
+	}
+	return flag;
 }
