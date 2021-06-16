@@ -40,7 +40,7 @@
 
 ### 初始界面
 
-![https://github.com/False-Mask/CLanguageFinalExam/pics/image-20210616125711615.png)
+![https://github.com/False-Mask/CLanguageFinalExam/tree/master/pics/image-20210616125711615.png)
 
 #### 简述
 
@@ -58,7 +58,7 @@
 
 ### 游戏界面
 
-![https://github.com/False-Mask/CLanguageFinalExam/pics/image-20210616125801868.png)
+![https://github.com/False-Mask/CLanguageFinalExam/tree/master/pics/image-20210616125801868.png)
 
 #### 简述
 
@@ -92,7 +92,7 @@ WSAD分别对应上下左右空格对应发射子弹，子弹击中敌人，便�
 
 死亡界面
 
-![https://github.com/False-Mask/CLanguageFinalExam/pics/image-20210616125849458.png)
+![https://github.com/False-Mask/CLanguageFinalExam/tree/master/pics/image-20210616125849458.png)
 
 
 
