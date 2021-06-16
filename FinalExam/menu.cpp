@@ -18,12 +18,12 @@ int openMenu(int left, int top, int right, int bottom, int space, COLORREF rgb, 
 	//第二个按钮
 	int top2 = top + space + bottom - top;
 	int bottom2 = bottom + space + bottom - top;
-	fillrectangle(left, top2, right, bottom2);
-	outtextxy(left + 25, top2 + 5, "历史记录");
+	//fillrectangle(left, top2, right, bottom2);
+	//outtextxy(left + 25, top2 + 5, "历史记录");
 
 	//第三个按钮
-	int top3 = top + 2 * (space + bottom - top);
-	int bottom3 = bottom + 2 * (space + bottom - top);
+	int top3 = top + 1 * (space + bottom - top);
+	int bottom3 = bottom + 1 * (space + bottom - top);
 	fillrectangle(left, top3, right, bottom3);
 	outtextxy(left + 25, top3 + 5, "退出游戏");
 
@@ -61,23 +61,25 @@ int handleMouseEvent(int left, int top, int right, int bottom, int space, COLORR
 			}
 		}
 
-		else if (flagX && flagY_2)
-		{
-			setlinecolor(RED);
-			rectangle(left - 3, top2 - 3, right + 3, bottom2 + 3);
-			if (m.uMsg == WM_LBUTTONDOWN)//鼠标左键被点击
-			{
-				settextcolor(RED);
-				outtextxy(left + 25, top2 + 5, "历史记录");
-			}
-			else if (m.uMsg == WM_LBUTTONUP)//鼠标左键释放
-			{
-				settextcolor(textRgb);
-				outtextxy(left + 25, top2 + 5, "历史记录");
-				eventResult = 2;
-				break;
-			}
-		}
+		//else if (flagX && flagY_2)
+		//{
+		//	setlinecolor(RED);
+		//	rectangle(left - 3, top2 - 3, right + 3, bottom2 + 3);
+		//	if (m.uMsg == WM_LBUTTONDOWN)//鼠标左键被点击
+		//	{
+		//		settextcolor(RED);
+		//		outtextxy(left + 25, top2 + 5, "历史记录");
+		//	}
+		//	//else if (m.uMsg == WM_LBUTTONUP)//鼠标左键释放
+		//	//{
+		//	//	settextcolor(textRgb);
+		//	//	outtextxy(left + 25, top2 + 5, "历史记录");
+		//	//	eventResult = 2;
+		//	//	break;
+		//	//}
+		//}
+
+
 		else if (flagX && flagY_3)
 		{
 			setlinecolor(RED);
@@ -100,11 +102,11 @@ int handleMouseEvent(int left, int top, int right, int bottom, int space, COLORR
 		{
 			setlinecolor(WHITE);
 			rectangle(left - 3, top - 3, right + 3, bottom + 3);
-			rectangle(left - 3, top2 - 3, right + 3, bottom2 + 3);
+			//rectangle(left - 3, top2 - 3, right + 3, bottom2 + 3);
 			rectangle(left - 3, top3 - 3, right + 3, bottom3 + 3);
 			settextcolor(textRgb);
 			outtextxy(left + 25, top + 5, "开始游戏");
-			outtextxy(left + 25, top2 + 5, "历史记录");
+			//outtextxy(left + 25, top2 + 5, "历史记录");
 			outtextxy(left + 25, top3 + 5, "退出游戏");
 		}
 	}
